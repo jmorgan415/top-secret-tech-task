@@ -69,6 +69,10 @@ export async function runTriage(projectRoot: string, findings: Finding[]): Promi
   const agent = await Agent.create({
     apiKey: process.env.CURSOR_API_KEY,
     model: { id: "composer-2.5" },
+    // Without an explicit name every local agent shows up as "New Agent" in
+    // `Agent.list()` — the only local stand-in for the cloud dashboard this project
+    // doesn't use (see agents/fix.ts for the per-resource equivalent).
+    name: `triage: ${candidates.length} candidate${candidates.length === 1 ? "" : "s"}`,
     // Read-only allowlist: the triage agent inspects the repo, it never edits it.
     // sandboxOptions additionally denies network access by default, so this step
     // can't reach out to anything even if a prompt tried to make it.

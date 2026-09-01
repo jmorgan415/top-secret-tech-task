@@ -54,6 +54,9 @@ export async function runFix(projectRoot: string, decision: PolicyDecision): Pro
   const agent = await Agent.create({
     apiKey: process.env.CURSOR_API_KEY,
     model: { id: "composer-2.5" },
+    // Without this, every local agent shows up as "New Agent" in Agent.list() — the
+    // only local stand-in for the cloud dashboard this project doesn't use.
+    name: `fix (${decision.action}): ${decision.resourceIdentifier}`,
     // Edit access, but no shell: the agent proposes a source change; lockfile
     // regeneration and the rebuild/re-scan happen in the verification stage, not here.
     tools: ["read", "edit", "grep", "glob", "ls"],

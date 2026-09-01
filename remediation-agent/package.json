@@ -10,7 +10,8 @@
     "triage": "tsx src/scripts/triage.ts",
     "plan": "tsx src/scripts/plan.ts",
     "fix": "tsx src/scripts/fix.ts",
-    "remediate": "tsx src/scripts/remediate.ts"
+    "remediate": "tsx src/scripts/remediate.ts",
+    "activity": "tsx src/scripts/activity.ts"
   },
   "dependencies": {
     "@cursor/sdk": "^1.0.30",
