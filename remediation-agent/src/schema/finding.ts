@@ -9,6 +9,7 @@ export const FindingType = z.enum([
   "dependency-vulnerability",
   "unused-dependency",
   "eol-base-image",
+  "hardcoded-secret",
 ]);
 export type FindingType = z.infer<typeof FindingType>;
 
@@ -16,6 +17,7 @@ export const FindingSource = z.enum([
   "npm-audit",
   "dependency-hygiene",
   "dockerfile-lint",
+  "secret-scanning",
   "manual",
 ]);
 export type FindingSource = z.infer<typeof FindingSource>;

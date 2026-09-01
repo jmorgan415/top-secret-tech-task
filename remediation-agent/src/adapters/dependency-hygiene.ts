@@ -1,22 +1,9 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
-import { extname, join } from "node:path";
+import { readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { Finding, makeFindingId } from "../schema/finding.js";
+import { walkFiles } from "../util/walk-files.js";
 
 const SOURCE_EXTENSIONS = new Set([".js", ".vue", ".ts", ".jsx", ".tsx"]);
-const SKIP_DIRS = new Set(["node_modules", "dist", ".git"]);
-
-function walk(dir: string, files: string[] = []): string[] {
-  for (const entry of readdirSync(dir)) {
-    const full = join(dir, entry);
-    const stat = statSync(full);
-    if (stat.isDirectory()) {
-      if (!SKIP_DIRS.has(entry)) walk(full, files);
-    } else if (SOURCE_EXTENSIONS.has(extname(entry))) {
-      files.push(full);
-    }
-  }
-  return files;
-}
 
 function isImportedAnywhere(pkgName: string, sourceFiles: string[]): boolean {
   const escaped = pkgName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -35,7 +22,7 @@ export function scanDependencyHygiene(projectRoot: string, sourceDirs: string[] 
   const sourceFiles = sourceDirs.flatMap((dir) => {
     const full = join(projectRoot, dir);
     try {
-      return statSync(full).isDirectory() ? walk(full) : [full];
+      return statSync(full).isDirectory() ? walkFiles(full, SOURCE_EXTENSIONS) : [full];
     } catch {
       return [];
     }

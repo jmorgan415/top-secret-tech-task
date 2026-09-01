@@ -19,6 +19,24 @@ export function applyPolicyGate(findings: Finding[], verdicts: TriageVerdict[]):
     const findingTypes = [...new Set(group.findings.map((f) => f.type))];
     const verdict = verdictByResource.get(group.key);
 
+    // A hardcoded secret always escalates to a human — no triage verdict, confidence
+    // score, or severity check gets a vote, and this is checked before anything else.
+    // The actual fix for a leaked credential is rotating it, which this pipeline can't
+    // do, so the only correct automated action is making sure a person sees it.
+    if (group.findings.some((f) => f.type === "hardcoded-secret")) {
+      return PolicyDecision.parse({
+        resourceFile: group.file,
+        resourceIdentifier: group.identifier,
+        findingIds,
+        findingTypes,
+        action: "escalate",
+        rationale: verdict
+          ? `triage: ${verdict.reasoning} [overridden: hardcoded secrets always escalate, regardless of triage recommendation]`
+          : "hardcoded secret detected; always escalates regardless of triage",
+        triageVerdict: verdict,
+      });
+    }
+
     if (verdict) {
       const hasCritical = group.findings.some((f) => f.severity === "critical");
       let action = verdict.recommendedAction;
