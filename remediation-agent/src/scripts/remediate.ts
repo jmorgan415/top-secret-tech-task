@@ -2,6 +2,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildPlan } from "../pipeline/plan.js";
 import { runFixPipeline } from "../pipeline/fix.js";
+import { writeReport } from "../pipeline/report.js";
 import { requireAuth } from "../util/require-auth.js";
 
 const PROJECT_ROOT = resolve(fileURLToPath(import.meta.url), "../../../../");
@@ -31,3 +32,13 @@ console.log(
     `${outcomes.filter((o) => o.verification.outcome === "failed").length} reverted after failing verification, ` +
     `${outcomes.filter((o) => o.verification.outcome === "skipped").length} skipped verification.`
 );
+
+const { jsonPath, markdownPath } = writeReport({
+  generatedAt: new Date().toISOString(),
+  projectRoot: PROJECT_ROOT,
+  branch,
+  findings,
+  decisions,
+  outcomes,
+});
+console.log(`\nReport written to:\n  ${jsonPath}\n  ${markdownPath}`);
