@@ -5,13 +5,25 @@ import { groupByResource, type ResourceGroup } from "../util/resource-group.js";
 
 const TRIAGE_WORTHY_SEVERITIES = new Set(["high", "critical"]);
 
+// A resource is only in scope for this pipeline if a fix maps onto exactly one file
+// edit: a dependency actually declared in package.json, or the base image in Dockerfile.
+// A deeply transitive CVE (flagged only because it's reachable from some direct
+// package's subtree) needs a different remediation strategy — e.g. one batched
+// `overrides` pass across the whole tree — which this prototype doesn't attempt; it
+// stays visible in the scan output but never reaches triage or the fix agent.
+function isAddressable(group: ResourceGroup): boolean {
+  return group.findings.some(
+    (f) => f.type !== "dependency-vulnerability" || f.evidence.direct === true
+  );
+}
+
 // Low/medium findings skip the (slower, metered) agent call entirely and fall through
-// to a deterministic "draft-for-review" default further down the pipeline — the agent
-// is reserved for the judgment calls a grep can't make: is this actually reachable, and
+// to a deterministic default further down the pipeline (the policy gate) — the agent is
+// reserved for the judgment calls a grep can't make: is this actually reachable, and
 // does how it's used actually hit the vulnerable code path.
 export function selectTriageCandidates(findings: Finding[]): ResourceGroup[] {
-  return groupByResource(findings).filter((group) =>
-    group.findings.some((f) => TRIAGE_WORTHY_SEVERITIES.has(f.severity))
+  return groupByResource(findings).filter(
+    (group) => isAddressable(group) && group.findings.some((f) => TRIAGE_WORTHY_SEVERITIES.has(f.severity))
   );
 }
 

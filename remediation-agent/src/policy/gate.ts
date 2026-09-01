@@ -61,7 +61,7 @@ export function applyPolicyGate(findings: Finding[], verdicts: TriageVerdict[]):
       resourceIdentifier: group.identifier,
       findingIds,
       action: "no-action",
-      rationale: "below the severity threshold for triage in this pass",
+      rationale: "below the severity threshold for triage, or only reachable via a transitive dependency chain this pass doesn't remediate directly",
     });
   });
 }
