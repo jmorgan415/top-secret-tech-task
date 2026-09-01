@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: safeflight-hg-school-www
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: safeflight-hg-school-www
+  template:
+    metadata:
+      labels:
+        app: safeflight-hg-school-www
+    spec:
+      containers:
+      - image: jeffm415/safeflight-hg-school:latest
+        name: safeflight-hg-school-www
+        ports:
+        - containerPort: 8080

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "safeflight-hg-school.name" . }}-www
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: {{ include "safeflight-hg-school.name" . }}-www
+  type: LoadBalancer
