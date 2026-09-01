@@ -18,11 +18,13 @@ function allowedFilesFor(decision: PolicyDecision): string[] {
 
 function dirtyFiles(projectRoot: string): Set<string> {
   const output = execFileSync("git", ["status", "--porcelain"], { cwd: projectRoot, encoding: "utf8" });
+  // Porcelain lines are a fixed-width "XY " status prefix (3 chars) then the path — e.g.
+  // " M package.json" has a leading space that's part of the status, not incidental
+  // whitespace, so the line must NOT be trimmed before slicing or the path shifts left.
   return new Set(
     output
       .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean)
+      .filter((line) => line.length > 0)
       .map((line) => line.slice(3).trim())
   );
 }
