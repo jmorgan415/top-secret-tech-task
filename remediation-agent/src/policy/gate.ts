@@ -16,6 +16,7 @@ export function applyPolicyGate(findings: Finding[], verdicts: TriageVerdict[]):
 
   return groupByResource(findings).map((group) => {
     const findingIds = group.findings.map((f) => f.id);
+    const findingTypes = [...new Set(group.findings.map((f) => f.type))];
     const verdict = verdictByResource.get(group.key);
 
     if (verdict) {
@@ -35,6 +36,7 @@ export function applyPolicyGate(findings: Finding[], verdicts: TriageVerdict[]):
         resourceFile: group.file,
         resourceIdentifier: group.identifier,
         findingIds,
+        findingTypes,
         action,
         rationale,
         triageVerdict: verdict,
@@ -51,6 +53,7 @@ export function applyPolicyGate(findings: Finding[], verdicts: TriageVerdict[]):
         resourceFile: group.file,
         resourceIdentifier: group.identifier,
         findingIds,
+        findingTypes,
         action: "auto-fix",
         rationale: "no import/require found by the static hygiene scan and no co-located finding was severe enough to warrant agent triage",
       });
@@ -60,6 +63,7 @@ export function applyPolicyGate(findings: Finding[], verdicts: TriageVerdict[]):
       resourceFile: group.file,
       resourceIdentifier: group.identifier,
       findingIds,
+      findingTypes,
       action: "no-action",
       rationale: "below the severity threshold for triage, or only reachable via a transitive dependency chain this pass doesn't remediate directly",
     });

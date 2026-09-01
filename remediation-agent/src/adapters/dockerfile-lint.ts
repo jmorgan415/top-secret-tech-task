@@ -74,7 +74,11 @@ export function scanDockerfileLint(projectRoot: string, dockerfilePaths: string[
       const version = parseVersion(tag);
       if (version.length === 0 || !isBelowMinimum(version, rule.minSupportedVersion)) continue;
 
-      const resource = { file: relPath, identifier: image, line };
+      // identifier is the base repo name ("node"), not the full "name:tag" — same
+      // convention as the dependency adapters (identifier = package name, version
+      // lives in evidence). A tag bump is exactly the kind of fix this produces, and
+      // an identifier that changes across a fix breaks re-scan-based verification.
+      const resource = { file: relPath, identifier: repo, line };
       findings.push(
         Finding.parse({
           id: makeFindingId("dockerfile-lint", "eol-base-image", resource),

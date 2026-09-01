@@ -9,11 +9,12 @@ const PROJECT_ROOT = resolve(fileURLToPath(import.meta.url), "../../../../");
 await requireAuth();
 
 const { decisions } = await buildPlan(PROJECT_ROOT);
-const { branch, results } = await runFixPipeline(PROJECT_ROOT, decisions);
+const { branch, outcomes } = await runFixPipeline(PROJECT_ROOT, decisions);
 
 console.log(`Fix pipeline ran on branch ${branch}\n`);
-for (const r of results) {
-  console.log(`${r.resourceFile}::${r.resourceIdentifier} [${r.action}] -> ${r.outcome}`);
-  if (r.outcome === "applied") console.log(`  ${r.summary}`);
-  if (r.rejectionReason) console.log(`  reason: ${r.rejectionReason}`);
+for (const { decision, fix, verification } of outcomes) {
+  console.log(`${decision.resourceFile}::${decision.resourceIdentifier} [${decision.action}] -> fix: ${fix.outcome}, verify: ${verification.outcome}`);
+  if (fix.outcome === "applied") console.log(`  ${fix.summary}`);
+  if (fix.rejectionReason) console.log(`  fix rejected: ${fix.rejectionReason}`);
+  console.log(`  ${verification.details}`);
 }

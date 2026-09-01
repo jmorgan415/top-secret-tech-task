@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import type { FixResult } from "../schema/fix.js";
+import type { PolicyDecision } from "../schema/policy.js";
 import { VerificationResult, type VerificationResult as VerificationResultT } from "../schema/verification.js";
 import { runAllScanners } from "./scan.js";
 
@@ -26,9 +27,19 @@ function dockerAvailable(): boolean {
   }
 }
 
-function findingStillPresent(projectRoot: string, result: FixResult): boolean {
+// Matches on (file, identifier, type) rather than just (file, identifier): a fix can
+// legitimately change what the resource looks like without eliminating it from a
+// re-scan entirely (e.g. removing a direct dependency doesn't remove a transitive copy
+// other packages still pull in — that's a different, unaddressed finding, not this one
+// still failing). Restricting to the original finding's own type(s) is what tells those
+// apart instead of treating any residual hit on the resource as this fix having failed.
+function findingStillPresent(projectRoot: string, decision: PolicyDecision): boolean {
+  const types = new Set(decision.findingTypes);
   return runAllScanners(projectRoot).some(
-    (f) => f.resource.file === result.resourceFile && f.resource.identifier === result.resourceIdentifier
+    (f) =>
+      f.resource.file === decision.resourceFile &&
+      f.resource.identifier === decision.resourceIdentifier &&
+      types.has(f.type)
   );
 }
 
@@ -36,65 +47,64 @@ function revert(projectRoot: string, commitSha: string | undefined) {
   if (commitSha) git(projectRoot, ["revert", "--no-edit", commitSha]);
 }
 
-function failed(result: FixResult, projectRoot: string, details: string): VerificationResultT {
-  revert(projectRoot, result.commitSha);
+function failed(decision: PolicyDecision, projectRoot: string, commitSha: string | undefined, details: string): VerificationResultT {
+  revert(projectRoot, commitSha);
   return VerificationResult.parse({
-    resourceFile: result.resourceFile,
-    resourceIdentifier: result.resourceIdentifier,
+    resourceFile: decision.resourceFile,
+    resourceIdentifier: decision.resourceIdentifier,
     outcome: "failed",
     details,
   });
 }
 
 // Rebuild and re-scan on the branch, not just re-read the diff — a syntactically fine
-// patch can still break the build or leave the underlying vulnerability in place. Any
-// failure here reverts the fix's commit rather than leaving a broken or unverified
-// change sitting on the branch.
-export async function verifyFix(projectRoot: string, result: FixResult): Promise<VerificationResultT> {
-  if (result.outcome !== "applied") {
+// patch can still break the build or leave the underlying vulnerability in place. Must
+// run immediately after this decision's own commit (before any later decision commits),
+// since a failure here reverts by commit sha — reverting a commit that isn't the branch
+// tip risks conflicting with whatever was committed on top of it afterward.
+export async function verifyFix(projectRoot: string, decision: PolicyDecision, fix: FixResult): Promise<VerificationResultT> {
+  if (fix.outcome !== "applied") {
     return VerificationResult.parse({
-      resourceFile: result.resourceFile,
-      resourceIdentifier: result.resourceIdentifier,
+      resourceFile: decision.resourceFile,
+      resourceIdentifier: decision.resourceIdentifier,
       outcome: "skipped",
       details: "fix was not applied",
     });
   }
 
-  if (result.resourceFile === "Dockerfile") {
+  if (decision.resourceFile === "Dockerfile") {
     if (!dockerAvailable()) {
       return VerificationResult.parse({
-        resourceFile: result.resourceFile,
-        resourceIdentifier: result.resourceIdentifier,
+        resourceFile: decision.resourceFile,
+        resourceIdentifier: decision.resourceIdentifier,
         outcome: "skipped",
         details: "docker is not available locally; skipping build verification",
       });
     }
     const build = tryRun("docker", ["build", "-t", "remediation-verify:tmp", "."], projectRoot);
-    if (!build.ok) return failed(result, projectRoot, `docker build failed, reverted: ${build.output.slice(0, 500)}`);
+    if (!build.ok) {
+      return failed(decision, projectRoot, fix.commitSha, `docker build failed, reverted: ${build.output.slice(0, 500)}`);
+    }
   } else {
     const install = tryRun("npm", ["install"], projectRoot);
-    if (!install.ok) return failed(result, projectRoot, `npm install failed, reverted: ${install.output.slice(0, 500)}`);
+    if (!install.ok) {
+      return failed(decision, projectRoot, fix.commitSha, `npm install failed, reverted: ${install.output.slice(0, 500)}`);
+    }
 
     const build = tryRun("npm", ["run", "build"], projectRoot);
-    if (!build.ok) return failed(result, projectRoot, `npm run build failed, reverted: ${build.output.slice(0, 500)}`);
+    if (!build.ok) {
+      return failed(decision, projectRoot, fix.commitSha, `npm run build failed, reverted: ${build.output.slice(0, 500)}`);
+    }
   }
 
-  if (findingStillPresent(projectRoot, result)) {
-    return failed(result, projectRoot, "finding still present after re-scan, reverted");
+  if (findingStillPresent(projectRoot, decision)) {
+    return failed(decision, projectRoot, fix.commitSha, "a finding of the same type is still present on this resource after re-scan, reverted");
   }
 
   return VerificationResult.parse({
-    resourceFile: result.resourceFile,
-    resourceIdentifier: result.resourceIdentifier,
+    resourceFile: decision.resourceFile,
+    resourceIdentifier: decision.resourceIdentifier,
     outcome: "verified",
     details: "rebuild succeeded and the finding no longer appears in a fresh scan",
   });
-}
-
-export async function runVerification(projectRoot: string, fixResults: FixResult[]): Promise<VerificationResultT[]> {
-  const verifications: VerificationResultT[] = [];
-  for (const result of fixResults) {
-    verifications.push(await verifyFix(projectRoot, result));
-  }
-  return verifications;
 }
