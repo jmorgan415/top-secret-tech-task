@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { Agent } from "@cursor/sdk";
 import type { PolicyDecision } from "../schema/policy.js";
 import { FixResult, type FixResult as FixResultT } from "../schema/fix.js";
+import { SANDBOX_OPTIONS } from "../util/sandbox.js";
 
 const FIXABLE_ACTIONS = new Set(["auto-fix", "draft-for-review"]);
 
@@ -62,7 +63,7 @@ export async function runFix(projectRoot: string, decision: PolicyDecision): Pro
     tools: ["read", "edit", "grep", "glob", "ls"],
     local: {
       cwd: projectRoot,
-      sandboxOptions: { enabled: true },
+      sandboxOptions: SANDBOX_OPTIONS,
     },
   });
 

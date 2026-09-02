@@ -2,6 +2,7 @@ import { Agent } from "@cursor/sdk";
 import type { Finding } from "../schema/finding.js";
 import { TriageVerdictBatch, type TriageVerdict } from "../schema/triage.js";
 import { groupByResource, type ResourceGroup } from "../util/resource-group.js";
+import { SANDBOX_OPTIONS } from "../util/sandbox.js";
 
 const TRIAGE_WORTHY_SEVERITIES = new Set(["high", "critical"]);
 
@@ -74,12 +75,12 @@ export async function runTriage(projectRoot: string, findings: Finding[]): Promi
     // doesn't use (see agents/fix.ts for the per-resource equivalent).
     name: `triage: ${candidates.length} candidate${candidates.length === 1 ? "" : "s"}`,
     // Read-only allowlist: the triage agent inspects the repo, it never edits it.
-    // sandboxOptions additionally denies network access by default, so this step
-    // can't reach out to anything even if a prompt tried to make it.
+    // sandboxOptions additionally denies network access by default where supported,
+    // so this step can't reach out to anything even if a prompt tried to make it.
     tools: ["read", "grep", "glob", "ls"],
     local: {
       cwd: projectRoot,
-      sandboxOptions: { enabled: true },
+      sandboxOptions: SANDBOX_OPTIONS,
     },
   });
 
