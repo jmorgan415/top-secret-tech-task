@@ -6,16 +6,18 @@ import { SANDBOX_OPTIONS } from "../util/sandbox.js";
 
 const TRIAGE_WORTHY_SEVERITIES = new Set(["high", "critical"]);
 
-// A resource is only in scope for this pipeline if a fix maps onto exactly one file
-// edit: a dependency actually declared in package.json, or the base image in Dockerfile.
-// A deeply transitive CVE (flagged only because it's reachable from some direct
-// package's subtree) needs a different remediation strategy — e.g. one batched
-// `overrides` pass across the whole tree — which this prototype doesn't attempt; it
-// stays visible in the scan output but never reaches triage or the fix agent.
+// A resource is only in scope if a fix maps onto exactly one file on the app's
+// runtime surface: a package declared in package.json "dependencies", the
+// Dockerfile FROM line, or a secret in src/. npm's isDirect flag is not enough —
+// it is also true for devDependencies (@vue/cli-plugin-eslint, babel, …), and
+// bumping those is a toolchain change, not an app remediation. Transitive CVEs
+// stay in the scan report; they need a batched overrides pass this prototype
+// does not attempt.
 function isAddressable(group: ResourceGroup): boolean {
-  return group.findings.some(
-    (f) => f.type !== "dependency-vulnerability" || f.evidence.direct === true
-  );
+  return group.findings.some((f) => {
+    if (f.type === "dependency-vulnerability") return f.evidence.production === true;
+    return true;
+  });
 }
 
 // Low/medium findings skip the (slower, metered) agent call entirely and fall through

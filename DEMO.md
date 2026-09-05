@@ -86,7 +86,12 @@ Expect on the order of ~60 findings. Most are transitive noise. That is the poin
 
 **Code:** [`src/agents/triage.ts`](remediation-agent/src/agents/triage.ts)
 
-Not every finding gets an agent call. Candidates must be **addressable** (a fix maps onto one file: a direct `package.json` dep or the Dockerfile `FROM`) **and** high/critical. Low/medium fall through to the policy gate.
+Not every finding gets an agent call. Candidates must be **addressable** **and** high/critical:
+
+- Addressable means a one-file fix on the **app runtime surface**: a package in `package.json` `"dependencies"`, the Dockerfile `FROM` line, or a secret in `src/`.
+- npm's `isDirect` is not enough — it is also true for `devDependencies` (`@vue/cli-plugin-eslint`, babel, vue-cli). Those stay in the scan report as `no-action`.
+- Transitive CVEs stay visible; they need a batched `overrides` pass this prototype does not attempt.
+- Low/medium fall through to the policy gate (unused production deps can still auto-fix without an agent call).
 
 The agent independently greps the repo for:
 
@@ -188,7 +193,7 @@ Full `remediate` is several agent runs plus `npm install` / `npm run build` per 
 
 ## After a run — what “working” looks like
 
-From the 2026-09-01 run (62 findings, 6 attempted):
+From the 2026-09-01 run (62 findings). Current `isAddressable` drops the Vue CLI eslint plugin (a `devDependency`); it would now be `no-action` instead of a verified fix.
 
 | Resource | Policy | Fix | Verify |
 |---|---|---|---|
@@ -197,7 +202,6 @@ From the 2026-09-01 run (62 findings, 6 attempted):
 | `wrangler` | draft-for-review | applied | verified |
 | `core-js` | auto-fix | applied | verified |
 | `Dockerfile` `node` | draft-for-review | applied | verified |
-| `@vue/cli-plugin-eslint` | draft-for-review | applied | verified |
 | AWS key in `src/config.js` | **escalate** | not attempted | — |
 
 If it breaks in the room: say which stage died (auth / triage JSON parse / out-of-scope edit / verify revert) and why that stage is allowed to fail closed.

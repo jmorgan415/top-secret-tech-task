@@ -64,8 +64,18 @@ function readInstalledVersion(projectRoot: string, pkgName: string): string | un
   }
 }
 
+function readProductionDependencyNames(projectRoot: string): Set<string> {
+  try {
+    const pkgJson = JSON.parse(readFileSync(join(projectRoot, "package.json"), "utf8"));
+    return new Set(Object.keys(pkgJson.dependencies ?? {}));
+  } catch {
+    return new Set();
+  }
+}
+
 export function parseNpmAuditReport(report: NpmAuditReport, projectRoot: string): Finding[] {
   const findings: Finding[] = [];
+  const productionDeps = readProductionDependencyNames(projectRoot);
 
   for (const vuln of Object.values(report.vulnerabilities)) {
     const advisories: Advisory[] = vuln.via
@@ -99,6 +109,7 @@ export function parseNpmAuditReport(report: NpmAuditReport, projectRoot: string)
           currentVersion: isTopLevel ? readInstalledVersion(projectRoot, vuln.name) : undefined,
           fixedVersion,
           direct: vuln.isDirect,
+          production: productionDeps.has(vuln.name),
           advisories,
           raw: vuln,
         },

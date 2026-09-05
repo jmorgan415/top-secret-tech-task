@@ -61,10 +61,10 @@ export function applyPolicyGate(findings: Finding[], verdicts: TriageVerdict[]):
       });
     }
 
-    // No triage verdict means nothing in this group was high/critical severity, so it never
-    // reached the agent. The dependency-hygiene adapter's "unused" check is itself a
-    // deterministic, source-wide reachability proof, so those can auto-fix without spending
-    // an agent call to re-confirm what a grep already settled.
+    // No triage verdict means the group never reached the agent: below high/critical,
+    // or a high/critical finding that is not addressable (devDependency / transitive).
+    // Unused-only production deps still auto-fix — the hygiene scan is itself a
+    // source-wide reachability proof, so we don't spend an agent call to re-confirm it.
     const isUnusedOnly = group.findings.every((f) => f.type === "unused-dependency");
     if (isUnusedOnly) {
       return PolicyDecision.parse({
@@ -83,7 +83,7 @@ export function applyPolicyGate(findings: Finding[], verdicts: TriageVerdict[]):
       findingIds,
       findingTypes,
       action: "no-action",
-      rationale: "below the severity threshold for triage, or only reachable via a transitive dependency chain this pass doesn't remediate directly",
+      rationale: "not in scope for this pass: below triage severity, a devDependency/build-tool CVE, or a transitive-only advisory this pipeline does not remediate directly",
     });
   });
 }

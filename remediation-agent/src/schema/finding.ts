@@ -40,7 +40,12 @@ export type Advisory = z.infer<typeof Advisory>;
 export const Evidence = z.object({
   currentVersion: z.string().optional(),
   fixedVersion: z.string().optional(),
+  // npm audit's isDirect: true for both dependencies and devDependencies.
   direct: z.boolean().optional(),
+  // Declared under package.json "dependencies" — the app runtime surface this
+  // pipeline will actually edit. Dev tooling (eslint plugins, vue-cli, babel)
+  // stays in the scan report but is not addressable.
+  production: z.boolean().optional(),
   advisories: z.array(Advisory).default([]),
   // Original scanner payload, kept verbatim for the audit trail / debugging normalization bugs.
   raw: z.unknown().optional(),

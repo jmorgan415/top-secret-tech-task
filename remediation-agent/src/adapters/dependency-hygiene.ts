@@ -44,6 +44,7 @@ export function scanDependencyHygiene(projectRoot: string, sourceDirs: string[] 
         resource,
         evidence: {
           currentVersion: declaredVersion,
+          production: true,
           advisories: [],
         },
         detectedAt: new Date().toISOString(),

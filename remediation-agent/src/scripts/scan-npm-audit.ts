@@ -13,12 +13,18 @@ const bySeverity = { critical: 0, high: 0, medium: 0, low: 0 };
 for (const f of findings) bySeverity[f.severity]++;
 console.log("By severity:", bySeverity);
 
-const direct = findings.filter((f) => f.evidence.direct);
-console.log(`\nDirect dependencies with findings (${direct.length}):`);
-for (const f of direct) {
+const production = findings.filter((f) => f.evidence.production);
+console.log(`\nProduction dependencies with findings (${production.length}):`);
+for (const f of production) {
   console.log(
     `  [${f.severity}] ${f.resource.identifier}@${f.evidence.currentVersion ?? "?"} -> ${
       f.evidence.fixedVersion ?? "no fix available"
     } (${f.title})`
   );
+}
+
+const directDev = findings.filter((f) => f.evidence.direct && !f.evidence.production);
+console.log(`\nDirect devDependencies with findings (${directDev.length}; not addressable):`);
+for (const f of directDev) {
+  console.log(`  [${f.severity}] ${f.resource.identifier} (${f.title})`);
 }
