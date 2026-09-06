@@ -2,7 +2,7 @@
 
 This is the walkthrough for the Field Engineer prototype. The Vue app in this repo is the **target** (a dated hang-gliding school site with planted issues). The pipeline lives in [`remediation-agent/`](remediation-agent/) and uses [`@cursor/sdk`](https://cursor.com/docs/sdk/typescript) to run Cursor agents programmatically — not a skill, not an in-IDE chat.
 
-The root [`README.md`](README.md) is only the Vue CLI app setup. This file is the demo.
+The root [`README.md`](README.md) is only the Vue CLI app setup. This file is the demo. One-minute slides live in [`slides/index.html`](slides/index.html) — open in a browser, `F` for fullscreen, arrows to advance, `S` for speaker notes.
 
 ```text
 scan (deterministic)
