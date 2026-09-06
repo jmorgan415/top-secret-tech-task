@@ -12,7 +12,6 @@
         --dim: #6b7380;
         --line: #2a2e35;
         --accent: #82b4ff;
-        --sdk: #82b4ff;
         --code: #1a1d22;
       }
 
@@ -39,42 +38,64 @@
       .slide {
         display: none;
         height: 100%;
-        padding: 7vh 8vw 12vh;
-        flex-direction: column;
-        justify-content: center;
-        gap: 1.6rem;
+        padding: 7vh 6vw 12vh;
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+        align-items: center;
+        gap: 4vw;
       }
 
       .slide.active {
+        display: grid;
+      }
+
+      .copy {
         display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 1.25rem;
+        min-width: 0;
+      }
+
+      .art {
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .art img {
+        width: 100%;
+        max-height: 64vh;
+        object-fit: contain;
+        display: block;
       }
 
       .kicker {
         color: var(--accent);
-        font-size: 0.95rem;
+        font-size: 0.9rem;
         letter-spacing: 0.12em;
         text-transform: uppercase;
         font-weight: 600;
       }
 
       h1 {
-        font-size: clamp(2.1rem, 4.4vw, 3.6rem);
+        font-size: clamp(2rem, 4vw, 3.4rem);
         font-weight: 600;
-        line-height: 1.15;
-        max-width: 18ch;
+        line-height: 1.12;
+        max-width: 16ch;
       }
 
       h2 {
-        font-size: clamp(1.8rem, 3.4vw, 2.8rem);
+        font-size: clamp(1.55rem, 3vw, 2.5rem);
         font-weight: 600;
-        line-height: 1.2;
-        max-width: 22ch;
+        line-height: 1.18;
+        max-width: 18ch;
       }
 
       .lede {
-        font-size: clamp(1.15rem, 1.8vw, 1.45rem);
+        font-size: clamp(1.05rem, 1.6vw, 1.35rem);
         color: var(--muted);
-        max-width: 42ch;
+        max-width: 36ch;
         line-height: 1.45;
       }
 
@@ -83,11 +104,11 @@
         display: flex;
         flex-direction: column;
         gap: 0.85rem;
-        max-width: 46ch;
+        max-width: 38ch;
       }
 
       .points li {
-        font-size: clamp(1.2rem, 1.9vw, 1.55rem);
+        font-size: clamp(1.05rem, 1.7vw, 1.4rem);
         line-height: 1.35;
       }
 
@@ -101,30 +122,29 @@
       .pipeline {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.55rem;
+        gap: 0.45rem;
         align-items: stretch;
-        margin-top: 0.4rem;
       }
 
       .step {
         background: var(--code);
         border: 1px solid var(--line);
         border-radius: 10px;
-        padding: 0.85rem 1rem;
-        min-width: 7.2rem;
-        flex: 1 1 7.2rem;
+        padding: 0.7rem 0.85rem;
+        min-width: 6.4rem;
+        flex: 1 1 6.4rem;
       }
 
       .step strong {
         display: block;
-        font-size: 1.05rem;
+        font-size: 0.95rem;
         font-weight: 600;
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.2rem;
       }
 
       .step em {
         font-style: normal;
-        font-size: 0.78rem;
+        font-size: 0.7rem;
         color: var(--dim);
         letter-spacing: 0.04em;
         text-transform: uppercase;
@@ -139,22 +159,22 @@
       }
 
       .tagline {
-        font-size: 1.15rem;
+        font-size: 1rem;
         color: var(--muted);
-        margin-top: 0.6rem;
       }
 
       .footer {
         position: fixed;
-        left: 8vw;
-        right: 8vw;
-        bottom: 1.6rem;
+        left: 6vw;
+        right: 6vw;
+        bottom: 1.5rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
         color: var(--dim);
         font-size: 0.8rem;
         letter-spacing: 0.04em;
+        z-index: 2;
       }
 
       .dots {
@@ -184,9 +204,10 @@
         background: #12151a;
         border-top: 1px solid var(--line);
         color: var(--muted);
-        padding: 0.9rem 8vw 3.2rem;
+        padding: 0.9rem 6vw 3.2rem;
         font-size: 0.95rem;
         line-height: 1.4;
+        z-index: 3;
       }
 
       body.show-notes .notes {
@@ -197,82 +218,108 @@
         padding-bottom: 22vh;
       }
 
-      kbd {
-        font-family: inherit;
-        color: var(--fg);
+      @media (max-width: 860px) {
+        .slide.active {
+          grid-template-columns: 1fr;
+          grid-template-rows: auto 1fr;
+        }
+
+        .art img {
+          max-height: 34vh;
+        }
       }
     </style>
   </head>
   <body>
     <div class="deck" id="deck">
       <section class="slide active" data-notes="Enterprises get CVE dumps. Most are noise. The cost is deciding what is reachable, then changing one file without breaking the build. This Vue app is the patient, not the product.">
-        <p class="kicker">Cursor Field Engineer prototype</p>
-        <h1>Unattended vulnerability remediation</h1>
-        <p class="lede">
-          A Cursor SDK pipeline that scans, judges, patches, verifies, and
-          opens a draft PR — with a human still on merge.
-        </p>
+        <div class="copy">
+          <p class="kicker">Cursor Field Engineer prototype</p>
+          <h1>Unattended vulnerability remediation</h1>
+          <p class="lede">
+            A Cursor SDK pipeline that scans, judges, patches, verifies, and
+            opens a draft PR — with a human still on merge.
+          </p>
+        </div>
+        <div class="art">
+          <img src="img/slide-01-unattended.png" alt="Scheduled agent connected to a repository, no operator at a keyboard" />
+        </div>
       </section>
 
       <section class="slide" data-notes="Four planted issues, then stop: semver is used and vulnerable, lodash is unused, Node 14 is EOL, a fake AWS key is committed. Do not list sixty npm audit hits.">
-        <p class="kicker">The problem</p>
-        <h2>CVE dumps arrive whether anyone shipped code.</h2>
-        <ul class="points">
-          <li>
-            Most findings are transitive noise.
-            <span>A grep of package.json cannot tell you if the app actually calls the vulnerable path.</span>
-          </li>
-          <li>
-            The expensive part is judgment, then a small safe change.
-            <span>Reachable? One-file edit? Did the build still pass?</span>
-          </li>
-        </ul>
+        <div class="copy">
+          <p class="kicker">The problem</p>
+          <h2>CVE dumps arrive whether anyone shipped code.</h2>
+          <ul class="points">
+            <li>
+              Most findings are transitive noise.
+              <span>A grep of package.json cannot tell you if the app actually calls the vulnerable path.</span>
+            </li>
+            <li>
+              The expensive part is judgment, then a small safe change.
+              <span>Reachable? One-file edit? Did the build still pass?</span>
+            </li>
+          </ul>
+        </div>
+        <div class="art">
+          <img src="img/slide-02-noise.png" alt="A dense vulnerability graph with one reachable path lit" />
+        </div>
       </section>
 
       <section class="slide" data-notes="SDK is only two boxes. Scan, policy, verify, and the draft PR are plain automation. Model proposes. Code disposes. A human merges.">
-        <p class="kicker">What I built</p>
-        <h2>Model proposes. Code disposes.</h2>
-        <div class="pipeline">
-          <div class="step">
-            <strong>Scan</strong>
-            <em>No model</em>
+        <div class="copy">
+          <p class="kicker">What I built</p>
+          <h2>Model proposes. Code disposes.</h2>
+          <div class="pipeline">
+            <div class="step">
+              <strong>Scan</strong>
+              <em>No model</em>
+            </div>
+            <div class="step sdk">
+              <strong>Triage</strong>
+              <em>SDK · read-only</em>
+            </div>
+            <div class="step">
+              <strong>Policy</strong>
+              <em>No model</em>
+            </div>
+            <div class="step sdk">
+              <strong>Fix</strong>
+              <em>SDK · edit, no shell</em>
+            </div>
+            <div class="step">
+              <strong>Verify</strong>
+              <em>Rebuild / revert</em>
+            </div>
+            <div class="step">
+              <strong>Draft PR</strong>
+              <em>Human merges</em>
+            </div>
           </div>
-          <div class="step sdk">
-            <strong>Triage</strong>
-            <em>SDK · read-only</em>
-          </div>
-          <div class="step">
-            <strong>Policy</strong>
-            <em>No model</em>
-          </div>
-          <div class="step sdk">
-            <strong>Fix</strong>
-            <em>SDK · edit, no shell</em>
-          </div>
-          <div class="step">
-            <strong>Verify</strong>
-            <em>Rebuild / revert</em>
-          </div>
-          <div class="step">
-            <strong>Draft PR</strong>
-            <em>Human merges</em>
-          </div>
+          <p class="tagline">Secrets always escalate. Critical never auto-applies. Verify is allowed to undo the agent.</p>
         </div>
-        <p class="tagline">Secrets always escalate. Critical never auto-applies. Verify is allowed to undo the agent.</p>
+        <div class="art">
+          <img src="img/slide-03-loop.png" alt="Six-step remediation loop with two SDK stages highlighted" />
+        </div>
       </section>
 
       <section class="slide" data-notes="A skill needs a person in the IDE. This has to run on a schedule, with tool allowlists, policy that can override the model, and git history from verify. Then stop talking and open the repo.">
-        <p class="kicker">Why the SDK · then the working thing</p>
-        <h2>A skill is not an enterprise control.</h2>
-        <ul class="points">
-          <li>
-            This has to run when nobody is in Cursor.
-            <span>Cron / CI, tool allowlists, policy override, verify that writes git history.</span>
-          </li>
-          <li>
-            Next: planted issues, then <code style="font-family: inherit; color: var(--accent);">npm run plan</code>, then where <code style="font-family: inherit; color: var(--accent);">Agent.create</code> starts.
-          </li>
-        </ul>
+        <div class="copy">
+          <p class="kicker">Why the SDK · then the working thing</p>
+          <h2>A skill is not an enterprise control.</h2>
+          <ul class="points">
+            <li>
+              This has to run when nobody is in Cursor.
+              <span>Cron / CI, tool allowlists, policy override, verify that writes git history.</span>
+            </li>
+            <li>
+              Next: planted issues, then <code style="font-family: inherit; color: var(--accent);">npm run plan</code>, then where <code style="font-family: inherit; color: var(--accent);">Agent.create</code> starts.
+            </li>
+          </ul>
+        </div>
+        <div class="art">
+          <img src="img/slide-04-control.png" alt="Empty IDE on the left versus scheduled CI agents on the right" />
+        </div>
       </section>
     </div>
 
