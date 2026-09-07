@@ -3,7 +3,10 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Finding } from "../schema/finding.js";
 import type { PolicyDecision } from "../schema/policy.js";
+import type { TriageVerdict } from "../schema/triage.js";
 import type { RemediationOutcome } from "./fix.js";
+import { selectOverrides } from "../policy/gate.js";
+import { OVERRIDE_RULE_LABEL } from "../util/format-verdicts.js";
 
 // Lives under remediation-agent/reports regardless of what the app repo's own layout is —
 // these are run artifacts of the tool, not source, so they're gitignored rather than committed.
@@ -14,6 +17,7 @@ export interface RemediationReport {
   projectRoot: string;
   branch?: string;
   findings: Finding[];
+  verdicts: TriageVerdict[];
   decisions: PolicyDecision[];
   outcomes: RemediationOutcome[];
 }
@@ -30,6 +34,30 @@ function toMarkdown(report: RemediationReport): string {
   if (report.branch) lines.push(`- Branch: \`${report.branch}\``);
   lines.push("");
 
+  const overrides = selectOverrides(report.decisions);
+  lines.push(`## Policy overrides (${overrides.length})`);
+  lines.push("");
+  lines.push(
+    "Deterministic gate rules that set the action instead of taking the triage agent's recommendation. This is the proof that policy can override the model."
+  );
+  lines.push("");
+  if (overrides.length === 0) {
+    lines.push("_No override rule fired this run._");
+    lines.push("");
+  } else {
+    lines.push("| Resource | Triage said | Gate did | Rule |");
+    lines.push("|---|---|---|---|");
+    for (const d of overrides) {
+      const override = d.gateOverride!;
+      const from = override.from ?? "(no verdict)";
+      const agreed = override.from != null && override.from === override.to ? " (agent agreed)" : "";
+      lines.push(
+        `| \`${d.resourceFile}::${d.resourceIdentifier}\` | ${from}${agreed} | **${override.to}** | ${escapeCell(OVERRIDE_RULE_LABEL[override.rule])} |`
+      );
+    }
+    lines.push("");
+  }
+
   lines.push(`## Findings (${report.findings.length})`);
   lines.push("");
   lines.push("| Type | Severity | Resource | Title |");
@@ -39,12 +67,28 @@ function toMarkdown(report: RemediationReport): string {
   }
   lines.push("");
 
+  lines.push(`## Triage verdicts (${report.verdicts.length})`);
+  lines.push("");
+  lines.push("Raw agent output passed to the policy gate. Groups that never reached triage have no row here.");
+  lines.push("");
+  lines.push("| Resource | Reachable | Recommended | Confidence | Reasoning |");
+  lines.push("|---|---|---|---|---|");
+  for (const v of report.verdicts) {
+    lines.push(
+      `| \`${v.resourceFile}::${v.resourceIdentifier}\` | ${v.reachable} | ${v.recommendedAction} | ${v.confidence} | ${escapeCell(v.reasoning)} |`
+    );
+  }
+  lines.push("");
+
   lines.push(`## Policy decisions (${report.decisions.length})`);
   lines.push("");
-  lines.push("| Resource | Action | Rationale |");
-  lines.push("|---|---|---|");
+  lines.push("| Resource | Gate | Triage recommended | Rationale |");
+  lines.push("|---|---|---|---|");
   for (const d of report.decisions) {
-    lines.push(`| \`${d.resourceFile}::${d.resourceIdentifier}\` | ${d.action} | ${escapeCell(d.rationale)} |`);
+    const recommended = d.triageVerdict?.recommendedAction ?? "—";
+    lines.push(
+      `| \`${d.resourceFile}::${d.resourceIdentifier}\` | ${d.action} | ${recommended} | ${escapeCell(d.rationale)} |`
+    );
   }
   lines.push("");
 

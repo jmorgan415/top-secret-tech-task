@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { runAllScanners } from "../pipeline/scan.js";
 import { runTriage, selectTriageCandidates } from "../agents/triage.js";
 import { requireAuth } from "../util/require-auth.js";
+import { formatTriageVerdicts } from "../util/format-verdicts.js";
 
 const PROJECT_ROOT = resolve(fileURLToPath(import.meta.url), "../../../../");
 
@@ -18,9 +19,4 @@ for (const c of candidates) {
 
 console.log("\nRunning triage agent (Cursor SDK, read-only, local)...\n");
 const verdicts = await runTriage(PROJECT_ROOT, findings);
-
-for (const v of verdicts) {
-  console.log(`\n${v.resourceFile}::${v.resourceIdentifier}`);
-  console.log(`  reachable: ${v.reachable}  action: ${v.recommendedAction}  confidence: ${v.confidence}`);
-  console.log(`  reasoning: ${v.reasoning}`);
-}
+console.log(formatTriageVerdicts(verdicts));

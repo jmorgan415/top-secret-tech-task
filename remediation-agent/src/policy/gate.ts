@@ -34,6 +34,11 @@ export function applyPolicyGate(findings: Finding[], verdicts: TriageVerdict[]):
           ? `triage: ${verdict.reasoning} [overridden: hardcoded secrets always escalate, regardless of triage recommendation]`
           : "hardcoded secret detected; always escalates regardless of triage",
         triageVerdict: verdict,
+        gateOverride: {
+          rule: "hardcoded-secret",
+          from: verdict?.recommendedAction,
+          to: "escalate",
+        },
       });
     }
 
@@ -41,13 +46,16 @@ export function applyPolicyGate(findings: Finding[], verdicts: TriageVerdict[]):
       const hasCritical = group.findings.some((f) => f.severity === "critical");
       let action = verdict.recommendedAction;
       let rationale = `triage: ${verdict.reasoning}`;
+      let gateOverride: PolicyDecisionT["gateOverride"];
 
       if (action === "auto-fix" && hasCritical) {
         action = "draft-for-review";
         rationale += " [downgraded: a critical-severity finding never auto-applies]";
+        gateOverride = { rule: "critical-no-autofix", from: verdict.recommendedAction, to: action };
       } else if (action === "auto-fix" && verdict.confidence < CONFIDENCE_FLOOR) {
         action = "draft-for-review";
         rationale += ` [downgraded: triage confidence ${verdict.confidence} is below the ${CONFIDENCE_FLOOR} floor]`;
+        gateOverride = { rule: "confidence-floor", from: verdict.recommendedAction, to: action };
       }
 
       return PolicyDecision.parse({
@@ -58,6 +66,7 @@ export function applyPolicyGate(findings: Finding[], verdicts: TriageVerdict[]):
         action,
         rationale,
         triageVerdict: verdict,
+        ...(gateOverride ? { gateOverride } : {}),
       });
     }
 
@@ -86,4 +95,8 @@ export function applyPolicyGate(findings: Finding[], verdicts: TriageVerdict[]):
       rationale: "not in scope for this pass: below triage severity, a devDependency/build-tool CVE, or a transitive-only advisory this pipeline does not remediate directly",
     });
   });
+}
+
+export function selectOverrides(decisions: PolicyDecisionT[]): PolicyDecisionT[] {
+  return decisions.filter((d) => d.gateOverride != null);
 }

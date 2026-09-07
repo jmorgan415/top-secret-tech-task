@@ -4,13 +4,17 @@ import { buildPlan } from "../pipeline/plan.js";
 import { runFixPipeline } from "../pipeline/fix.js";
 import { writeReport } from "../pipeline/report.js";
 import { requireAuth } from "../util/require-auth.js";
+import { formatTriageVerdicts, formatGateOverrides } from "../util/format-verdicts.js";
 
 const PROJECT_ROOT = resolve(fileURLToPath(import.meta.url), "../../../../");
 
 await requireAuth();
 
 console.log("1/3 scanning + triaging...\n");
-const { findings, decisions } = await buildPlan(PROJECT_ROOT);
+const { findings, verdicts, decisions } = await buildPlan(PROJECT_ROOT);
+console.log(formatGateOverrides(decisions));
+console.log(formatTriageVerdicts(verdicts));
+console.log("Policy decisions:\n");
 for (const d of decisions) {
   console.log(`  ${d.resourceFile}::${d.resourceIdentifier} -> ${d.action}`);
 }
@@ -25,7 +29,9 @@ for (const { decision, fix, verification } of outcomes) {
 }
 
 console.log("\n3/3 summary\n");
-console.log(`${findings.length} findings scanned, ${decisions.length} resources triaged.`);
+console.log(
+  `${findings.length} findings scanned, ${verdicts.length} resources sent to triage, ${decisions.length} policy decisions.`
+);
 console.log(`${outcomes.length} resources had a fix attempted on ${branch}.`);
 console.log(
   `${outcomes.filter((o) => o.verification.outcome === "verified").length} verified, ` +
@@ -38,6 +44,7 @@ const { jsonPath, markdownPath } = writeReport({
   projectRoot: PROJECT_ROOT,
   branch,
   findings,
+  verdicts,
   decisions,
   outcomes,
 });

@@ -125,7 +125,7 @@ Triage is an input, never the final action.
 npm run plan    # scan + triage + gate; no edits
 ```
 
-Best demo opener: run `plan`, read the action buckets out loud, then decide whether to fix.
+Best demo opener: run `plan`, read **Policy overrides** first (secret always escalates; wrangler `auto-fix` downgraded because critical never auto-applies), then the action buckets.
 
 ### 4. Fix — Cursor SDK (edit, no shell)
 
@@ -184,7 +184,7 @@ In GitHub Actions ([`.github/workflows/remediation.yml`](.github/workflows/remed
 
 1. Show planted issues: `package.json`, `Dockerfile`, `src/config.js`, `src/main.js`
 2. `npm run scan:all` — noise vs signal
-3. `npm run plan` — SDK triage + policy buckets (secrets escalate, wrangler downgraded, semver auto-fix)
+3. `npm run plan` — stdout leads with **Policy overrides** (secret escalate, wrangler downgraded), then triage verdicts, then buckets
 4. Open `agents/triage.ts` and `agents/fix.ts` at `Agent.create`
 5. Either `npm run remediate` **or** skip to an existing `reports/*.md` if time is tight
 6. `npm run activity` — local agent history (`Agent.list({ runtime: "local", cwd })`)
