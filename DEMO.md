@@ -68,12 +68,12 @@ Run these from `remediation-agent/`. Each stage has its own script so you can st
 
 Four scanners, one `Finding` schema ([`src/schema/finding.ts`](remediation-agent/src/schema/finding.ts)):
 
-| Adapter | Finding type | What it does |
-|---|---|---|
-| `npm-audit.ts` | `dependency-vulnerability` | Runs `npm audit --json`, maps severity, records `direct` / `fixedVersion` |
-| `dependency-hygiene.ts` | `unused-dependency` | Direct `dependencies` with no `import`/`require` under `src/` |
-| `dockerfile-lint.ts` | `eol-base-image` | `FROM` tags below a supported LTS (Node 22, Python 3.11) |
-| `secret-scanning.ts` | `hardcoded-secret` | AWS key shape + credential-shaped assignments; values redacted |
+| Adapter | Finding type | Severity | What it does |
+|---|---|---|---|
+| `npm-audit.ts` | `dependency-vulnerability` | npm's label (`moderate`→medium, `info`→low) | Runs `npm audit --json`; records `direct` / `production` / `fixedVersion` |
+| `dependency-hygiene.ts` | `unused-dependency` | always **medium** | Direct `dependencies` with no `import`/`require` under `src/` |
+| `dockerfile-lint.ts` | `eol-base-image` | always **high** | `FROM` tags below a supported LTS (Node 22, Python 3.11) |
+| `secret-scanning.ts` | `hardcoded-secret` | always **critical** | AWS key shape + credential-shaped assignments; values redacted. Critical because the leak is the commit, not runtime reachability. |
 
 ```bash
 npm run scan:all          # all four adapters
@@ -86,12 +86,12 @@ Expect on the order of ~60 findings. Most are transitive noise. That is the poin
 
 **Code:** [`src/agents/triage.ts`](remediation-agent/src/agents/triage.ts)
 
-Not every finding gets an agent call. Candidates must be **addressable** **and** high/critical:
+Not every finding gets an agent call. Adapters **assign** severity; `TRIAGE_WORTHY_SEVERITIES` in `triage.ts` only **filters** to `{high, critical}`. Candidates must also be **addressable**.
 
 - Addressable means a one-file fix on the **app runtime surface**: a package in `package.json` `"dependencies"`, the Dockerfile `FROM` line, or a secret in `src/`.
 - npm's `isDirect` is not enough — it is also true for `devDependencies` (`@vue/cli-plugin-eslint`, babel, vue-cli). Those stay in the scan report as `no-action`.
 - Transitive CVEs stay visible; they need a batched `overrides` pass this prototype does not attempt.
-- Low/medium fall through to the policy gate (unused production deps can still auto-fix without an agent call).
+- Low/medium never reach the agent. Unused production deps are medium by design, so they auto-fix at the gate without a model call. Lodash/wrangler still get triaged because a high/critical CVE shares the same package group.
 
 The agent independently greps the repo for:
 

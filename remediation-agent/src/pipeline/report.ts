@@ -60,6 +60,10 @@ function toMarkdown(report: RemediationReport): string {
 
   lines.push(`## Findings (${report.findings.length})`);
   lines.push("");
+  lines.push(
+    "Severity is assigned by scanners, not by triage: npm audit maps `moderate`→medium and `info`→low; unused dependencies are always medium; EOL base images are always high; hardcoded secrets are always critical."
+  );
+  lines.push("");
   lines.push("| Type | Severity | Resource | Title |");
   lines.push("|---|---|---|---|");
   for (const f of report.findings) {
@@ -69,7 +73,9 @@ function toMarkdown(report: RemediationReport): string {
 
   lines.push(`## Triage verdicts (${report.verdicts.length})`);
   lines.push("");
-  lines.push("Raw agent output passed to the policy gate. Groups that never reached triage have no row here.");
+  lines.push(
+    "Raw agent output passed to the policy gate. Only **addressable** groups with at least one **high or critical** finding are sent to `Agent.create`; everything else has no row here and is decided by the gate alone."
+  );
   lines.push("");
   lines.push("| Resource | Reachable | Recommended | Confidence | Reasoning |");
   lines.push("|---|---|---|---|---|");
