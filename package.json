@@ -11,8 +11,7 @@
     "core-js": "^3.25.0",
     "lodash": "4.17.19",
     "semver": "7.5.2",
-    "vue": "^3.2.38",
-    "wrangler": "3.18.0"
+    "vue": "^3.2.38"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",
