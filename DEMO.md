@@ -1,6 +1,6 @@
 # Demo: Cursor SDK vulnerability remediation
 
-This is the walkthrough for the Field Engineer prototype. The Vue app in this repo is the **target** (a dated hang-gliding school site with planted issues). The pipeline does not live here. It is the platform repo [`jmorgan415/remediation-platform`](https://github.com/jmorgan415/remediation-platform), checked out locally at `../remediation-platform`. This app only calls that repo's reusable workflow. The platform uses [`@cursor/sdk`](https://cursor.com/docs/sdk/typescript) to run Cursor agents programmatically — not a skill, not an in-IDE chat.
+This is the walkthrough for the Field Engineer prototype. The Vue app in this repo is the **target** (a dated hang-gliding school site with planted issues). The pipeline does not live here. It is the public platform repo [`jmorgan415/remediation-platform`](https://github.com/jmorgan415/remediation-platform). This app calls that repo. GitHub Actions uses the reusable workflow. Locally, `npm run plan` clones the platform into the cache and runs it against this checkout. You do not keep a second repo beside this one. The platform uses [`@cursor/sdk`](https://cursor.com/docs/sdk/typescript) to run Cursor agents programmatically — not a skill, not an in-IDE chat.
 
 The root [`README.md`](README.md) is only the Vue CLI app setup. This file is the demo. One-minute slides live in [`slides/index.html`](slides/index.html) — open in a browser, `F` for fullscreen, arrows to advance, `S` for speaker notes.
 
@@ -15,8 +15,8 @@ scan (deterministic)
 
 SDK starts in two places only:
 
-- [`../remediation-platform/src/agents/triage.ts`](../remediation-platform/src/agents/triage.ts) — `Agent.create`, tools `read` / `grep` / `glob` / `ls`
-- [`../remediation-platform/src/agents/fix.ts`](../remediation-platform/src/agents/fix.ts) — `Agent.create`, tools `read` / `edit` / `grep` / `glob` / `ls`
+- [`src/agents/triage.ts`](https://github.com/jmorgan415/remediation-platform/blob/main/src/agents/triage.ts) — `Agent.create`, tools `read` / `grep` / `glob` / `ls`
+- [`src/agents/fix.ts`](https://github.com/jmorgan415/remediation-platform/blob/main/src/agents/fix.ts) — `Agent.create`, tools `read` / `edit` / `grep` / `glob` / `ls`
 
 Everything else is plain TypeScript.
 
@@ -41,28 +41,29 @@ Transitive CVEs show up in the scan and stay in the report. They never reach the
 
 ## Prerequisites
 
-Install the app from this repo, then install and run the platform repo against it. `TARGET_REPO` is required:
+Install this app. The first `npm run plan` clones the public platform repo into `~/.cache/remediation-platform`. Log in once from that cache if you have not already:
 
 ```bash
 npm install
-cd ../remediation-platform && npm ci
-export TARGET_REPO="$(cd .. && pwd)/cursor_tech_task"
-npm run login
-# or: export CURSOR_API_KEY=cursor_...
 npm run plan
 ```
 
-`npm run fix` / `npm run remediate` require a **clean git working tree**. They create a branch `remediation/<timestamp>` and commit per resource. Docker is optional: without it, Dockerfile verification is skipped rather than failed.
+```bash
+cd ~/.cache/remediation-platform
+npm run login
+```
+
+`npm run remediate` in this app requires a **clean git working tree**. It creates a branch `remediation/<timestamp>` and commits per resource. Docker is optional: without it, Dockerfile verification is skipped rather than failed.
 
 ## Stage-by-stage walkthrough
 
-Run these from `../remediation-platform/`. Each stage has its own script so you can stop and talk, rather than opening with a full `remediate`.
+From this repo, `npm run plan` is scan plus triage plus the policy gate, and `npm run remediate` is the full run. The stage scripts below live in the platform repo. Open those files on GitHub when you want to show `Agent.create`. Do not start with a full remediate.
 
 ### 1. Scan — deterministic, no model
 
-**Code:** [`src/pipeline/scan.ts`](../remediation-platform/src/pipeline/scan.ts) → adapters in [`src/adapters/`](../remediation-platform/src/adapters/)
+**Code:** [`src/pipeline/scan.ts`](https://github.com/jmorgan415/remediation-platform/blob/main/src/pipeline/scan.ts) → adapters in [`src/adapters/`](https://github.com/jmorgan415/remediation-platform/tree/main/src/adapters)
 
-Four scanners, one `Finding` schema ([`src/schema/finding.ts`](../remediation-platform/src/schema/finding.ts)):
+Four scanners, one `Finding` schema ([`src/schema/finding.ts`](https://github.com/jmorgan415/remediation-platform/blob/main/src/schema/finding.ts)):
 
 | Adapter | Finding type | Severity | What it does |
 |---|---|---|---|
@@ -70,6 +71,8 @@ Four scanners, one `Finding` schema ([`src/schema/finding.ts`](../remediation-pl
 | `dependency-hygiene.ts` | `unused-dependency` | always **medium** | Direct `dependencies` with no `import`/`require` under `src/` |
 | `dockerfile-lint.ts` | `eol-base-image` | always **high** | `FROM` tags below a supported LTS (Node 22, Python 3.11) |
 | `secret-scanning.ts` | `hardcoded-secret` | always **critical** | AWS key shape + credential-shaped assignments; values redacted. Critical because the leak is the commit, not runtime reachability. |
+
+These commands run inside `~/.cache/remediation-platform` after the first `npm run plan`, with `TARGET_REPO` set to this app. From this repo, `npm run plan` is the command to use in the room.
 
 ```bash
 npm run scan:all          # all four adapters
@@ -80,7 +83,7 @@ Expect on the order of ~60 findings. Most are transitive noise. That is the poin
 
 ### 2. Triage — Cursor SDK (read-only)
 
-**Code:** [`src/agents/triage.ts`](../remediation-platform/src/agents/triage.ts)
+**Code:** [`src/agents/triage.ts`](https://github.com/jmorgan415/remediation-platform/blob/main/src/agents/triage.ts)
 
 Not every finding gets an agent call. Adapters **assign** severity; `TRIAGE_WORTHY_SEVERITIES` in `triage.ts` only **filters** to `{high, critical}`. Candidates must also be **addressable**.
 
@@ -105,7 +108,7 @@ This is the first SDK call. If the interviewer asks “where does the SDK start?
 
 ### 3. Policy gate — deterministic, overrides the model
 
-**Code:** [`src/policy/gate.ts`](../remediation-platform/src/policy/gate.ts)
+**Code:** [`src/policy/gate.ts`](https://github.com/jmorgan415/remediation-platform/blob/main/src/policy/gate.ts)
 
 Triage is an input, never the final action.
 
@@ -125,7 +128,7 @@ Best demo opener: run `plan`, read **Policy overrides** first (secret always esc
 
 ### 4. Fix — Cursor SDK (edit, no shell)
 
-**Code:** [`src/agents/fix.ts`](../remediation-platform/src/agents/fix.ts), orchestrated by [`src/pipeline/fix.ts`](../remediation-platform/src/pipeline/fix.ts)
+**Code:** [`src/agents/fix.ts`](https://github.com/jmorgan415/remediation-platform/blob/main/src/agents/fix.ts), orchestrated by [`src/pipeline/fix.ts`](https://github.com/jmorgan415/remediation-platform/blob/main/src/pipeline/fix.ts)
 
 One new `Agent.create` per fixable resource (`auto-fix` or `draft-for-review`). Isolation is intentional: a bad fix must not leak context into the next resource. No `Agent.resume`.
 
@@ -144,7 +147,7 @@ Each applied fix is committed immediately:
 
 ### 5. Verify — rebuild, rescan, maybe revert
 
-**Code:** [`src/pipeline/verify.ts`](../remediation-platform/src/pipeline/verify.ts)
+**Code:** [`src/pipeline/verify.ts`](https://github.com/jmorgan415/remediation-platform/blob/main/src/pipeline/verify.ts)
 
 Runs **immediately** after that resource's commit, while the commit is still HEAD. Batching verify to the end made `git revert` conflict when several fixes all edited `package.json`.
 
@@ -159,31 +162,29 @@ That is why lodash can apply and then revert: removing the unused *direct* dep i
 
 ### 6. Report (+ draft PR in CI)
 
-**Code:** [`src/pipeline/report.ts`](../remediation-platform/src/pipeline/report.ts)
+**Code:** [`src/pipeline/report.ts`](https://github.com/jmorgan415/remediation-platform/blob/main/src/pipeline/report.ts)
 
-Writes gitignored JSON + markdown under `../remediation-platform/reports/`.
+Writes gitignored JSON and markdown under the platform cache `reports/` directory. On GitHub, the workflow uploads that directory as an artifact.
 
 ```bash
 npm run remediate    # steps 1–6 in one shot
 ```
 
-Orchestrator: [`src/scripts/remediate.ts`](../remediation-platform/src/scripts/remediate.ts).
+Orchestrator: [`src/scripts/remediate.ts`](https://github.com/jmorgan415/remediation-platform/blob/main/src/scripts/remediate.ts).
 
 In GitHub Actions ([`.github/workflows/remediation.yml`](.github/workflows/remediation.yml)):
 
 - Triggers: daily `cron` at 06:00 UTC, path-filtered `push` to `main` (`package.json`, lockfile, `Dockerfile`, `src/**`), and **workflow_dispatch** (the demo button)
 - Secret: `CURSOR_API_KEY`
 - Always opens a **draft** PR if the branch is ahead of `main`. Auto-fix vs draft-for-review is a local policy label on the commit, not a license to auto-merge
-- Uploads `../remediation-platform/reports/` as an artifact even when the job fails
+- Uploads the platform `reports/` directory as an artifact even when the job fails
 
 ## Suggested live path (keep the full run in reserve)
 
 1. Show planted issues: `package.json`, `Dockerfile`, `src/config.js`, `src/main.js`
-2. `npm run scan:all` — noise vs signal
-3. `npm run plan` — stdout leads with **Policy overrides** (secret escalate, wrangler downgraded), then triage verdicts, then buckets
-4. Open `agents/triage.ts` and `agents/fix.ts` at `Agent.create`
-5. Either `npm run remediate` **or** skip to an existing `reports/*.md` if time is tight
-6. `npm run activity` — local agent history (`Agent.list({ runtime: "local", cwd })`)
+2. From this repo, `npm run plan` — stdout leads with **Policy overrides** (secret escalate, wrangler downgraded), then triage verdicts, then buckets
+3. Open `triage.ts` and `fix.ts` on GitHub at `Agent.create`
+4. Either `npm run remediate` **or** skip to a report already written under `~/.cache/remediation-platform/reports/` if time is tight
 
 Full `remediate` is several agent runs plus `npm install` / `npm run build` per applied fix. Do not start it as the first move unless you have time to let it finish.
 
@@ -206,14 +207,14 @@ If it breaks in the room: say which stage died (auth / triage JSON parse / out-o
 
 | Path | Role |
 |---|---|
-| [`../remediation-platform/src/scripts/remediate.ts`](../remediation-platform/src/scripts/remediate.ts) | End-to-end orchestrator |
-| [`../remediation-platform/src/pipeline/scan.ts`](../remediation-platform/src/pipeline/scan.ts) | Adapter fan-out |
-| [`../remediation-platform/src/pipeline/plan.ts`](../remediation-platform/src/pipeline/plan.ts) | Scan → triage → gate |
-| [`../remediation-platform/src/agents/triage.ts`](../remediation-platform/src/agents/triage.ts) | **SDK start (read-only)** |
-| [`../remediation-platform/src/policy/gate.ts`](../remediation-platform/src/policy/gate.ts) | Recommendations → actions |
-| [`../remediation-platform/src/agents/fix.ts`](../remediation-platform/src/agents/fix.ts) | **SDK start (edit)** |
-| [`../remediation-platform/src/pipeline/fix.ts`](../remediation-platform/src/pipeline/fix.ts) | Branch, per-resource commit |
-| [`../remediation-platform/src/pipeline/verify.ts`](../remediation-platform/src/pipeline/verify.ts) | Rebuild / rescan / revert |
-| [`../remediation-platform/src/pipeline/report.ts`](../remediation-platform/src/pipeline/report.ts) | JSON + markdown report |
-| [`../remediation-platform/src/util/sandbox.ts`](../remediation-platform/src/util/sandbox.ts) | Sandbox on unless `CI` |
+| [`src/scripts/remediate.ts`](https://github.com/jmorgan415/remediation-platform/blob/main/src/scripts/remediate.ts) | End-to-end orchestrator |
+| [`src/pipeline/scan.ts`](https://github.com/jmorgan415/remediation-platform/blob/main/src/pipeline/scan.ts) | Adapter fan-out |
+| [`src/pipeline/plan.ts`](https://github.com/jmorgan415/remediation-platform/blob/main/src/pipeline/plan.ts) | Scan → triage → gate |
+| [`src/agents/triage.ts`](https://github.com/jmorgan415/remediation-platform/blob/main/src/agents/triage.ts) | **SDK start (read-only)** |
+| [`src/policy/gate.ts`](https://github.com/jmorgan415/remediation-platform/blob/main/src/policy/gate.ts) | Recommendations → actions |
+| [`src/agents/fix.ts`](https://github.com/jmorgan415/remediation-platform/blob/main/src/agents/fix.ts) | **SDK start (edit)** |
+| [`src/pipeline/fix.ts`](https://github.com/jmorgan415/remediation-platform/blob/main/src/pipeline/fix.ts) | Branch, per-resource commit |
+| [`src/pipeline/verify.ts`](https://github.com/jmorgan415/remediation-platform/blob/main/src/pipeline/verify.ts) | Rebuild / rescan / revert |
+| [`src/pipeline/report.ts`](https://github.com/jmorgan415/remediation-platform/blob/main/src/pipeline/report.ts) | JSON + markdown report |
+| [`src/util/sandbox.ts`](https://github.com/jmorgan415/remediation-platform/blob/main/src/util/sandbox.ts) | Sandbox on unless `CI` |
 | [`.github/workflows/remediation.yml`](.github/workflows/remediation.yml) | Unattended trigger + draft PR |

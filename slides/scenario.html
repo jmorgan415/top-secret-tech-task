@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>SafeFlight scenario</title>
+    <style>
+      :root {
+        --bg: #e7e9ee;
+        --card: #ffffff;
+        --ink: #1c2430;
+        --muted: #5c6775;
+        --label: #6b7785;
+        --navy: #1e3a5f;
+        --blue: #2c6bed;
+        --amber: #d97706;
+        --line: #e3e6ec;
+        --bar: #121a2f;
+      }
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      html, body {
+        height: 100%;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      }
+
+      .slide {
+        height: 100%;
+        padding: 28px 32px 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 24px;
+      }
+
+      .kicker {
+        color: var(--blue);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        font-size: 28px;
+        font-weight: 650;
+        letter-spacing: -0.03em;
+        margin-top: 4px;
+      }
+
+      .stage {
+        border: 1px solid #c9d4ea;
+        background: #f4f7fc;
+        color: var(--navy);
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px 16px 16px;
+        border-top: 4px solid var(--navy);
+        min-width: 0;
+      }
+
+      .card.solution { border-top-color: var(--blue); }
+      .card.trigger { border-top-color: var(--amber); }
+      .card.eng { border-top-color: var(--blue); }
+      .card.devex { border-top-color: var(--amber); }
+
+      .tag {
+        color: var(--label);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h2 {
+        font-size: 16px;
+        margin: 4px 0 6px;
+        letter-spacing: -0.02em;
+      }
+
+      p, li {
+        font-size: 13px;
+        line-height: 1.35;
+        color: #33404d;
+      }
+
+      .section {
+        color: var(--label);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-top: 2px;
+      }
+
+      .who {
+        color: var(--muted);
+        font-size: 12px;
+        margin-bottom: 8px;
+      }
+
+      ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+
+      li strong {
+        color: var(--ink);
+        font-weight: 650;
+      }
+
+      .objective {
+        margin-top: auto;
+        background: var(--bar);
+        color: #f4f6fa;
+        border-radius: 12px;
+        padding: 14px 18px;
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 18px;
+        align-items: center;
+      }
+
+      .objective .tag { color: #9eb0d4; }
+
+      .objective p { color: #f4f6fa; font-size: 15px; }
+    </style>
+  </head>
+  <body>
+    <main class="slide">
+      <header>
+        <div>
+          <div class="kicker">Cursor interview context</div>
+          <h1>Meeting scenario and stakeholder alignment</h1>
+        </div>
+        <div class="stage">Stage: mock customer meeting · you own the room</div>
+      </header>
+
+      <section class="row">
+        <article class="card">
+          <div class="tag">Prospect and scale</div>
+          <h2>SafeFlight Group</h2>
+          <p>Global aviation. 5,000+ engineers across business units. GitHub, Jira, and CI/CD. Microservices, monoliths, internal platforms, plus VB6 and COBOL. GitHub Copilot is already deployed, mostly as autocomplete.</p>
+        </article>
+        <article class="card solution">
+          <div class="tag">Evaluated solution</div>
+          <h2>Cursor as the agent runtime</h2>
+          <p>One product for the editor, cloud agents, and unattended pipelines. The hang-gliding service is the pilot app. Agents are created only in remediation-platform. The app calls that workflow and does not contain Agent.create.</p>
+        </article>
+        <article class="card trigger">
+          <div class="tag">Urgent trigger</div>
+          <h2>Remediation pull requests are stuck</h2>
+          <p>A weekly audit of about 60 findings was assigned to Copilot’s coding agent. Reviewers stopped merging the wide pull requests. The backlog remains. A lab agent from Anthropic or OpenAI is the other option on the table.</p>
+        </article>
+      </section>
+
+      <div class="section">Panel persona assignments and evaluation priorities</div>
+
+      <section class="row">
+        <article class="card">
+          <div class="tag">CTO</div>
+          <h2>Global CTO</h2>
+          <p class="who">Peer to the account team</p>
+          <ul>
+            <li><strong>Vendor risk.</strong> One agent runtime, not Copilot in the editor, a coding agent, and a lab CLI.</li>
+            <li><strong>Data.</strong> No training on their code. Repositories that must never run an agent never get a key.</li>
+            <li><strong>Decision.</strong> A 90-day pilot. Not a 5,000-seat cutover.</li>
+          </ul>
+        </article>
+        <article class="card eng">
+          <div class="tag">VP Engineering</div>
+          <h2>VP of Engineering</h2>
+          <p class="who">Owns delivery across business units</p>
+          <ul>
+            <li><strong>Backlog.</strong> Findings on services nobody staffs have to become reviewable changes.</li>
+            <li><strong>Control.</strong> Triage cannot edit. Fix has no shell. A secret escalates. A person merges the draft.</li>
+            <li><strong>Legacy.</strong> The pilot is in-git services. COBOL and VB6 are out of scope.</li>
+          </ul>
+        </article>
+        <article class="card devex">
+          <div class="tag">VP DevEx</div>
+          <h2>VP of Developer Experience</h2>
+          <p class="who">Owns adoption and the editor estate</p>
+          <ul>
+            <li><strong>Change.</strong> One VS Code team. JetBrains stays on Copilot.</li>
+            <li><strong>Ownership.</strong> App teams call the platform. They cannot add a shell on their own.</li>
+            <li><strong>Proof.</strong> Time from Jira to merge, and the team still in Cursor in week eight.</li>
+          </ul>
+        </article>
+      </section>
+
+      <footer class="objective">
+        <div class="tag">Today’s objective</div>
+        <p>Confirm the pilot team and the constraint. Show the hang-gliding app calling remediation-platform. Leave with Cursor as the only agent runtime for that team, and Copilot left everywhere else.</p>
+      </footer>
+    </main>
+  </body>
+</html>

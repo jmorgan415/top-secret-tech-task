@@ -1,5 +1,7 @@
 # safeflight-hg-school
 
+The Vue app is the remediation target. The pipeline is not in this repo. See [DEMO.md](DEMO.md). GitHub Actions calls [jmorgan415/remediation-platform](https://github.com/jmorgan415/remediation-platform). Locally, `npm run plan` does the same thing.
+
 ## Project setup
 ```
 npm install
