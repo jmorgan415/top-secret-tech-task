@@ -1,12 +1,7 @@
 name: Vulnerability Remediation
 
 on:
-  # New CVEs get disclosed against dependencies you already have, independent of
-  # any code change -- a schedule is what actually catches those.
-  schedule:
-    - cron: "0 6 * * *"
-  # Cheap immediate feedback for the moments the dependency/build surface itself
-  # changes. Path-filtered so this doesn't run on every commit to main.
+  # Path-filtered so this doesn't run on every commit to main.
   push:
     branches: [main]
     paths:
